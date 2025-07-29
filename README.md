@@ -5,6 +5,10 @@ Aloft is a simple static web application which retrieves multi-level wind data f
 for use in OpenRocket's multi-level wind profile feature (v24.12 and later). The data can be
 downloaded and imported into OpenRocket as a csv file.
 
+Try it out at: https://aloft.onrender.com
+
+<img width="989" height="745" alt="image" src="https://github.com/user-attachments/assets/f3e14dba-6dd0-42a3-8a5c-8dbc69e9ed59" />
+
 ## Local setup and usage:
 
 This repository uses [Bun](https://bun.com) as the TypeScript runtime and package manager.

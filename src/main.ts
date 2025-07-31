@@ -1,4 +1,3 @@
-// src/main.ts
 interface WeatherResponse {
   hourly: {
     time: string[];
@@ -97,6 +96,7 @@ class WindDataFetcher {
   private results: HTMLDivElement;
   private currentWindData: WindData[] = [];
   private currentFormData: FormData | null = null;
+  private themeSwitch: HTMLInputElement;
 
   constructor() {
     this.form = document.getElementById('windForm') as HTMLFormElement;
@@ -104,6 +104,7 @@ class WindDataFetcher {
     this.errorMessage = document.getElementById('errorMessage') as HTMLDivElement;
     this.loadingIndicator = document.getElementById('loadingIndicator') as HTMLDivElement;
     this.results = document.getElementById('results') as HTMLDivElement;
+    this.themeSwitch = document.getElementById('themeSwitch') as HTMLInputElement;
 
     this.init();
   }
@@ -112,6 +113,26 @@ class WindDataFetcher {
     this.setupTimeOptions();
     this.setupEventListeners();
     this.setDefaultDate();
+    this.setupTheme();
+  }
+
+  private setupTheme(): void {
+    // Check for saved theme preference or use system preference
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+      document.body.classList.add('dark-mode');
+      this.themeSwitch.checked = true;
+    }
+
+    this.themeSwitch.addEventListener('change', () => {
+      document.body.classList.toggle('dark-mode', this.themeSwitch.checked);
+      localStorage.setItem('theme', this.themeSwitch.checked ? 'dark' : 'light');
+      if (this.results.style.display === 'block') {
+        this.drawGraph();
+      }
+    });
   }
 
   private setupTimeOptions(): void {
@@ -285,67 +306,122 @@ class WindDataFetcher {
       tbody.appendChild(tr);
     });
 
-    // Update wind vector graph
+    this.drawGraph();
+
+    this.results.style.display = 'block';
+  }
+
+  private drawGraph(): void {
+    if (!this.currentFormData || !this.currentWindData.length) return;
+
+    const { speedUnit } = this.currentFormData;
+    const windData = this.currentWindData;
+
     const canvas = document.getElementById('windVectorCanvas') as HTMLCanvasElement;
     const ctx = canvas.getContext('2d')!;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    const isDark = document.body.classList.contains('dark-mode');
+
+    const axisColor = isDark ? '#e5e7eb' : '#000000';
+    const textColor = isDark ? '#e5e7eb' : '#000000';
+    const lineColor = isDark ? '#60a5fa' : '#0000ff';
+    const pointColor = isDark ? '#60a5fa' : '#0000ff';
+    const arrowColor = isDark ? '#f87171' : '#ff0000';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+
     // Set up dimensions and scaling
-    const padding = 50;
+    const padding = 60; // Increased padding for labels
     const width = canvas.width - 2 * padding;
     const height = canvas.height - 2 * padding;
-    const maxSpeed = Math.max(...windData.map(d => d.speed), 20); // Minimum 20 km/h for scale
+    const maxSpeed = Math.max(...windData.map(d => d.speed), 20); // Minimum 20 for scale
     const maxAlt = Math.max(...windData.map(d => d.altitude));
+
+    // Draw grid lines
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth = 1;
+    const numTicks = 5;
+    for (let i = 1; i < numTicks; i++) {
+      // Vertical grid
+      const x = padding + (i / numTicks) * width;
+      ctx.beginPath();
+      ctx.moveTo(x, padding);
+      ctx.lineTo(x, height + padding);
+      ctx.stroke();
+
+      // Horizontal grid
+      const y = height + padding - (i / numTicks) * height; // From bottom up
+      ctx.beginPath();
+      ctx.moveTo(padding, y);
+      ctx.lineTo(width + padding, y);
+      ctx.stroke();
+    }
 
     // Draw axes
     ctx.beginPath();
     ctx.moveTo(padding, padding);
     ctx.lineTo(padding, height + padding);
     ctx.lineTo(width + padding, height + padding);
-    ctx.strokeStyle = 'black';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = axisColor;
+    ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Draw axis labels
+    // Set font
     ctx.font = '12px Arial';
+    ctx.fillStyle = textColor;
+
+    // Draw x-axis label
     ctx.textAlign = 'center';
-    ctx.fillText('Wind Speed (km/h)', width / 2 + padding, height + padding + 20);
+    ctx.textBaseline = 'top';
+    ctx.fillText(`Wind Speed (${unitMap[speedUnit]})`, padding + width / 2, height + padding + 20);
+
+    // Draw y-axis label
     ctx.save();
-    ctx.translate(padding - 20, height / 2 + padding);
+    ctx.translate(20, padding + height / 2);
     ctx.rotate(-Math.PI / 2);
     ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
     ctx.fillText('Altitude (m)', 0, 0);
     ctx.restore();
 
     // Draw tick marks and labels
-    const numTicks = 5;
+    ctx.textBaseline = 'alphabetic';
     for (let i = 0; i <= numTicks; i++) {
-      const y = height + padding - (i / numTicks) * height;
-      const alt = (i / numTicks) * maxAlt;
-      ctx.beginPath();
-      ctx.moveTo(padding - 5, y);
-      ctx.lineTo(padding + 5, y);
-      ctx.stroke();
-      ctx.fillText(alt.toFixed(0), padding - 15, y + 3);
-
+      // X ticks
       const x = padding + (i / numTicks) * width;
-      const speed = (i / numTicks) * maxSpeed;
+      const yBottom = height + padding;
       ctx.beginPath();
-      ctx.moveTo(x, height + padding - 5);
-      ctx.lineTo(x, height + padding + 5);
+      ctx.moveTo(x, yBottom);
+      ctx.lineTo(x, yBottom + 5);
+      ctx.strokeStyle = axisColor;
+      ctx.lineWidth = 1;
       ctx.stroke();
-      ctx.fillText(speed.toFixed(0), x, height + padding + 15);
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(((i / numTicks) * maxSpeed).toFixed(0), x, yBottom + 10);
+
+      // Y ticks
+      const yTick = height + padding - (i / numTicks) * height;
+      ctx.beginPath();
+      ctx.moveTo(padding, yTick);
+      ctx.lineTo(padding - 5, yTick);
+      ctx.stroke();
+
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(((i / numTicks) * maxAlt).toFixed(0), padding - 10, yTick);
     }
 
-    // Draw line connecting points
+    // Draw wind speed line
     ctx.beginPath();
     windData.forEach((d, i) => {
       const x = padding + (d.speed / maxSpeed) * width;
-      const y = height + padding - (d.altitude / maxAlt) * height; // Inverted y-axis
+      const y = height + padding - (d.altitude / maxAlt) * height;
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     });
-    ctx.strokeStyle = 'blue';
+    ctx.strokeStyle = lineColor;
     ctx.lineWidth = 2;
     ctx.stroke();
 
@@ -353,25 +429,30 @@ class WindDataFetcher {
     windData.forEach((d, i) => {
       const x = padding + (d.speed / maxSpeed) * width;
       const y = height + padding - (d.altitude / maxAlt) * height;
-      ctx.beginPath();
-      ctx.arc(x, y, 3, 0, Math.PI * 2);
-      ctx.fillStyle = 'blue';
-      ctx.fill();
 
-      // Draw arrow for direction
-      const arrowLength = 20;
-      const angle = (d.direction - 90) * Math.PI / 180; // Adjust for graph orientation (0° is east)
-      const arrowX = x + Math.cos(angle) * arrowLength;
-      const arrowY = y - Math.sin(angle) * arrowLength; // Subtract for inverted y
+      // Point
       ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(arrowX, arrowY);
-      ctx.strokeStyle = 'red';
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = pointColor;
+      ctx.fill();
+      ctx.strokeStyle = axisColor;
       ctx.lineWidth = 1;
       ctx.stroke();
 
-      // Draw arrowhead
-      const headLength = 5;
+      // Arrow for direction
+      const arrowLength = 20;
+      const angle = ((360 - d.direction) * Math.PI) / 180; // Adjust: 0° north, clockwise
+      const arrowX = x + Math.cos(angle) * arrowLength;
+      const arrowY = y - Math.sin(angle) * arrowLength;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(arrowX, arrowY);
+      ctx.strokeStyle = arrowColor;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Arrowhead
+      const headLength = 6;
       const headAngle = Math.PI / 6;
       ctx.beginPath();
       ctx.moveTo(arrowX, arrowY);
@@ -379,16 +460,13 @@ class WindDataFetcher {
         arrowX - headLength * Math.cos(angle - headAngle),
         arrowY + headLength * Math.sin(angle - headAngle)
       );
+      ctx.moveTo(arrowX, arrowY);
       ctx.lineTo(
         arrowX - headLength * Math.cos(angle + headAngle),
         arrowY + headLength * Math.sin(angle + headAngle)
       );
-      ctx.closePath();
-      ctx.fillStyle = 'red';
-      ctx.fill();
+      ctx.stroke();
     });
-
-    this.results.style.display = 'block';
   }
 
   private downloadCsv(): void {

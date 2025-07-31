@@ -1,10 +1,9 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wind Data Fetcher</title>
+    <title>Aloft</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -13,9 +12,9 @@
             <h1>🌪️ Aloft</h1>
             <p>Get precise wind speed and direction data at different altitudes for OpenRocket multi level wind simulations</p>
             <div class="theme-toggle">
-                <label for="themeSwitch" class="theme-toggle-label">
+                <label class="theme-toggle-label" for="themeSwitch">
                     <input type="checkbox" id="themeSwitch" class="theme-switch">
-                    <span class="slider"></span>
+                    <span class="slider round"></span>
                 </label>
             </div>
         </header>
@@ -131,7 +130,7 @@
                 </div>
                     
                 <button type="submit" id="fetchButton" class="fetch-button">
-                    <span class="button-text">🌬️ Fetch Wind Data</span>
+                    <span class="button-text">Get Winds</span>
                     <div class="spinner" style="display: none;"></div>
                 </button>
             </form>
@@ -179,8 +178,8 @@
                     </table>
                 </div>
                 
-                <div class="wind-vector-graph">
-                    <canvas id="windVectorCanvas" width="800" height="600"></canvas>
+                <div class="wind-vector-graph" style="position: relative; height:70vh; width:auto">
+                    <canvas id="windVectorCanvas"></canvas>
                 </div>
             </div>
         </main>

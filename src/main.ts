@@ -1,3 +1,5 @@
+import { Chart } from 'chart.js/auto';
+
 interface WeatherResponse {
   hourly: {
     time: string[];
@@ -97,6 +99,7 @@ class WindDataFetcher {
   private currentWindData: WindData[] = [];
   private currentFormData: FormData | null = null;
   private themeSwitch: HTMLInputElement;
+  private chart: Chart | null = null;
 
   constructor() {
     this.form = document.getElementById('windForm') as HTMLFormElement;
@@ -117,7 +120,6 @@ class WindDataFetcher {
   }
 
   private setupTheme(): void {
-    // Check for saved theme preference or use system preference
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     
@@ -137,8 +139,6 @@ class WindDataFetcher {
 
   private setupTimeOptions(): void {
     const timeSelect = document.getElementById('time') as HTMLSelectElement;
-
-    // Generate hourly intervals (00:00 to 23:00)
     for (let hour = 0; hour < 24; hour++) {
       const timeString = `${hour.toString().padStart(2, '0')}:00`;
       const option = document.createElement('option');
@@ -146,11 +146,8 @@ class WindDataFetcher {
       option.textContent = timeString;
       timeSelect.appendChild(option);
     }
-
-    // Set default to current hour
     const now = new Date();
-    const currentHour = now.getHours().toString().padStart(2, '0');
-    timeSelect.value = `${currentHour}:00`;
+    timeSelect.value = `${now.getHours().toString().padStart(2, '0')}:00`;
   }
 
   private setDefaultDate(): void {
@@ -167,17 +164,13 @@ class WindDataFetcher {
 
   private async handleSubmit(event: Event): Promise<void> {
     event.preventDefault();
-
     this.errorMessage.style.display = 'none';
-
     try {
       const formData = this.getFormData();
       this.validateFormData(formData);
-
       this.showLoading();
       const windData = await this.fetchWindData(formData);
       this.displayResults(windData, formData);
-
     } catch (error) {
       this.showError(error instanceof Error ? error.message : 'An unexpected error occurred');
     } finally {
@@ -200,15 +193,12 @@ class WindDataFetcher {
     if (isNaN(data.latitude) || data.latitude < -90 || data.latitude > 90) {
       throw new Error('Latitude must be between -90 and 90 degrees');
     }
-
     if (isNaN(data.longitude) || data.longitude < -180 || data.longitude > 180) {
       throw new Error('Longitude must be between -180 and 180 degrees');
     }
-
     if (!data.date) {
       throw new Error('Please select a date');
     }
-
     if (!data.time) {
       throw new Error('Please select a time');
     }
@@ -216,8 +206,6 @@ class WindDataFetcher {
 
   private async fetchWindData(formData: FormData): Promise<WindData[]> {
     const { latitude, longitude, date, time, speedUnit, minHpa } = formData;
-
-    // Determine API endpoint based on date
     const currentDate = new Date();
     const sevenDaysAgo = new Date(currentDate);
     sevenDaysAgo.setDate(currentDate.getDate() - 7);
@@ -225,7 +213,6 @@ class WindDataFetcher {
     if (new Date(date) < sevenDaysAgo) {
       baseUrl = 'https://archive-api.open-meteo.com/v1/archive';
     }
-
     const params = new URLSearchParams({
       latitude: latitude.toString(),
       longitude: longitude.toString(),
@@ -234,36 +221,25 @@ class WindDataFetcher {
       timezone: 'auto',
       wind_speed_unit: speedUnit
     });
-
-    // Select levels >= minHpa (note: higher hPa = lower altitude)
     const selectedLevels = levels.filter(l => l.hpa >= minHpa).sort((a, b) => a.alt - b.alt);
-
     const windParams: string[] = [];
     selectedLevels.forEach(l => {
       const suffix = l.hpa === 1013 ? '_10m' : l.hpa === 1004 ? '_80m' : `_${l.hpa}hPa`;
       windParams.push(`wind_speed${suffix}`);
       windParams.push(`wind_direction${suffix}`);
     });
-
     params.append('hourly', windParams.join(','));
-
     const url = `${baseUrl}?${params.toString()}`;
     console.log('Fetching from:', url);
-
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`API request failed: ${response.statusText}`);
     }
-
     const data = await response.json() as WeatherResponse;
     const hourly = data.hourly;
-
-    // Calculate the target hour index
     const [hh, mm] = time.split(':').map(Number);
     const targetHour = Math.round(hh + mm / 60);
     const index = targetHour % 24;
-
-    // Extract data
     const windData: WindData[] = [];
     selectedLevels.forEach(l => {
       const suffix = l.hpa === 1013 ? '_10m' : l.hpa === 1004 ? '_80m' : `_${l.hpa}hPa`;
@@ -277,22 +253,17 @@ class WindDataFetcher {
         cardinalDirection: cardinal
       });
     });
-
     return windData;
   }
 
   private displayResults(windData: WindData[], formData: FormData): void {
     this.currentWindData = windData;
     this.currentFormData = formData;
-
     const { latitude, longitude, date, time, speedUnit } = formData;
-
     const latDir = latitude >= 0 ? 'N' : 'S';
     const lonDir = longitude >= 0 ? 'E' : 'W';
     (document.getElementById('locationInfo') as HTMLSpanElement).innerText = `Location: ${Math.abs(latitude).toFixed(4)}° ${latDir}, ${Math.abs(longitude).toFixed(4)}° ${lonDir}`;
-
     (document.getElementById('dateTimeInfo') as HTMLSpanElement).innerText = `Date/Time: ${date} ${time} (local time at location)`;
-
     const tbody = this.results.querySelector('tbody') as HTMLTableSectionElement;
     tbody.innerHTML = '';
     windData.forEach(d => {
@@ -305,177 +276,160 @@ class WindDataFetcher {
       `;
       tbody.appendChild(tr);
     });
-
     this.drawGraph();
-
     this.results.style.display = 'block';
   }
 
   private drawGraph(): void {
     if (!this.currentFormData || !this.currentWindData.length) return;
-
     const { speedUnit } = this.currentFormData;
     const windData = this.currentWindData;
-
     const canvas = document.getElementById('windVectorCanvas') as HTMLCanvasElement;
-    const ctx = canvas.getContext('2d')!;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
     const isDark = document.body.classList.contains('dark-mode');
 
-    const axisColor = isDark ? '#e5e7eb' : '#000000';
-    const textColor = isDark ? '#e5e7eb' : '#000000';
-    const lineColor = isDark ? '#60a5fa' : '#0000ff';
-    const pointColor = isDark ? '#60a5fa' : '#0000ff';
-    const arrowColor = isDark ? '#f87171' : '#ff0000';
-    const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+    // Define theme-aware colors
+    const colors = {
+      grid: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+      axis: isDark ? '#e5e7eb' : '#000000',
+      line: isDark ? '#60a5fa' : '#0000ff',
+      point: isDark ? '#60a5fa' : '#0000ff',
+      arrow: isDark ? '#f87171' : '#ff0000',
+      text: isDark ? '#e5e7eb' : '#000000',
+      background: isDark ? '#374151' : '#f9fafb'
+    };
 
-    // Set up dimensions and scaling
-    const padding = 60; // Increased padding for labels
-    const width = canvas.width - 2 * padding;
-    const height = canvas.height - 2 * padding;
+    // Destroy existing chart if it exists
+    if (this.chart) {
+      this.chart.destroy();
+    }
+
+    // Custom plugin to draw wind direction arrows
+    const arrowPlugin = {
+      id: 'windDirectionArrows',
+      afterDatasetsDraw(chart: Chart) {
+        const ctx = chart.ctx;
+        const meta = chart.getDatasetMeta(0);
+
+        meta.data.forEach((element: any, index: number) => {
+          const data = windData[index];
+          const x = element.x;
+          const y = element.y;
+          const angle = ((360 - data.direction) * Math.PI) / 180; // Adjust: 0° north, clockwise
+          const arrowLength = 20;
+          const arrowX = x + Math.cos(angle) * arrowLength;
+          const arrowY = y - Math.sin(angle) * arrowLength;
+
+          // Draw arrow line
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(arrowX, arrowY);
+          ctx.strokeStyle = colors.arrow;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+
+          // Draw arrowhead
+          const headLength = 6;
+          const headAngle = Math.PI / 6;
+          ctx.beginPath();
+          ctx.moveTo(arrowX, arrowY);
+          ctx.lineTo(
+            arrowX - headLength * Math.cos(angle - headAngle),
+            arrowY + headLength * Math.sin(angle - headAngle)
+          );
+          ctx.moveTo(arrowX, arrowY);
+          ctx.lineTo(
+            arrowX - headLength * Math.cos(angle + headAngle),
+            arrowY + headLength * Math.sin(angle + headAngle)
+          );
+          ctx.stroke();
+        });
+      }
+    };
+
+    // Register the plugin
+    Chart.register(arrowPlugin);
+
+    // Determine max wind speed for x-axis scaling
     const maxSpeed = Math.max(...windData.map(d => d.speed), 20); // Minimum 20 for scale
-    const maxAlt = Math.max(...windData.map(d => d.altitude));
 
-    // Draw grid lines
-    ctx.strokeStyle = gridColor;
-    ctx.lineWidth = 1;
-    const numTicks = 5;
-    for (let i = 1; i < numTicks; i++) {
-      // Vertical grid
-      const x = padding + (i / numTicks) * width;
-      ctx.beginPath();
-      ctx.moveTo(x, padding);
-      ctx.lineTo(x, height + padding);
-      ctx.stroke();
-
-      // Horizontal grid
-      const y = height + padding - (i / numTicks) * height; // From bottom up
-      ctx.beginPath();
-      ctx.moveTo(padding, y);
-      ctx.lineTo(width + padding, y);
-      ctx.stroke();
-    }
-
-    // Draw axes
-    ctx.beginPath();
-    ctx.moveTo(padding, padding);
-    ctx.lineTo(padding, height + padding);
-    ctx.lineTo(width + padding, height + padding);
-    ctx.strokeStyle = axisColor;
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Set font
-    ctx.font = '12px Arial';
-    ctx.fillStyle = textColor;
-
-    // Draw x-axis label
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.fillText(`Wind Speed (${unitMap[speedUnit]})`, padding + width / 2, height + padding + 20);
-
-    // Draw y-axis label
-    ctx.save();
-    ctx.translate(20, padding + height / 2);
-    ctx.rotate(-Math.PI / 2);
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.fillText('Altitude (m)', 0, 0);
-    ctx.restore();
-
-    // Draw tick marks and labels
-    ctx.textBaseline = 'alphabetic';
-    for (let i = 0; i <= numTicks; i++) {
-      // X ticks
-      const x = padding + (i / numTicks) * width;
-      const yBottom = height + padding;
-      ctx.beginPath();
-      ctx.moveTo(x, yBottom);
-      ctx.lineTo(x, yBottom + 5);
-      ctx.strokeStyle = axisColor;
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      ctx.fillText(((i / numTicks) * maxSpeed).toFixed(0), x, yBottom + 10);
-
-      // Y ticks
-      const yTick = height + padding - (i / numTicks) * height;
-      ctx.beginPath();
-      ctx.moveTo(padding, yTick);
-      ctx.lineTo(padding - 5, yTick);
-      ctx.stroke();
-
-      ctx.textAlign = 'right';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(((i / numTicks) * maxAlt).toFixed(0), padding - 10, yTick);
-    }
-
-    // Draw wind speed line
-    ctx.beginPath();
-    windData.forEach((d, i) => {
-      const x = padding + (d.speed / maxSpeed) * width;
-      const y = height + padding - (d.altitude / maxAlt) * height;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.strokeStyle = lineColor;
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Draw data points and direction arrows
-    windData.forEach((d, i) => {
-      const x = padding + (d.speed / maxSpeed) * width;
-      const y = height + padding - (d.altitude / maxAlt) * height;
-
-      // Point
-      ctx.beginPath();
-      ctx.arc(x, y, 4, 0, Math.PI * 2);
-      ctx.fillStyle = pointColor;
-      ctx.fill();
-      ctx.strokeStyle = axisColor;
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      // Arrow for direction
-      const arrowLength = 20;
-      const angle = ((360 - d.direction) * Math.PI) / 180; // Adjust: 0° north, clockwise
-      const arrowX = x + Math.cos(angle) * arrowLength;
-      const arrowY = y - Math.sin(angle) * arrowLength;
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(arrowX, arrowY);
-      ctx.strokeStyle = arrowColor;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-
-      // Arrowhead
-      const headLength = 6;
-      const headAngle = Math.PI / 6;
-      ctx.beginPath();
-      ctx.moveTo(arrowX, arrowY);
-      ctx.lineTo(
-        arrowX - headLength * Math.cos(angle - headAngle),
-        arrowY + headLength * Math.sin(angle - headAngle)
-      );
-      ctx.moveTo(arrowX, arrowY);
-      ctx.lineTo(
-        arrowX - headLength * Math.cos(angle + headAngle),
-        arrowY + headLength * Math.sin(angle + headAngle)
-      );
-      ctx.stroke();
+    // Create new chart
+    this.chart = new Chart(canvas, {
+      type: 'line',
+      data: {
+        datasets: [{
+          label: 'Wind Speed',
+          data: windData.map(d => ({ x: d.speed, y: d.altitude })),
+          borderColor: colors.line,
+          backgroundColor: colors.point,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          showLine: true,
+          tension: 0.4,
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false, // Allow the chart to fill the container height
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                const data = windData[context.dataIndex];
+                return `Speed: ${data.speed.toFixed(1)} ${unitMap[speedUnit]}, Altitude: ${data.altitude} m, Direction: ${data.direction}° (${data.cardinalDirection})`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            type: 'linear',
+            title: {
+              display: true,
+              text: `Wind Speed (${unitMap[speedUnit]})`,
+              color: colors.text,
+              font: { size: 14 }
+            },
+            grid: {
+              color: colors.grid
+            },
+            ticks: {
+              color: colors.text
+            },
+            min: 0,
+            max: maxSpeed * 1.2 // Add 20% padding
+          },
+          y: {
+            type: 'linear',
+            title: {
+              display: true,
+              text: 'Altitude (m)',
+              color: colors.text,
+              font: { size: 14 }
+            },
+            grid: {
+              color: colors.grid
+            },
+            ticks: {
+              color: colors.text
+            },
+            beginAtZero: false,
+            min: 0,
+            max: Math.max(...windData.map(d => d.altitude)) * 1.2 // Add 20% padding
+          }
+        }
+      }
     });
   }
 
   private downloadCsv(): void {
     if (!this.currentWindData) return;
-
     const headers = 'altitude,speed,direction\n';
     const rows = this.currentWindData.map(d => `${d.altitude},${d.speed},${d.direction}`).join('\n');
     const csv = headers + rows;
-
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -487,11 +441,9 @@ class WindDataFetcher {
 
   private copyToClipboard(): void {
     if (!this.currentWindData) return;
-
     const headers = 'altitude,speed,direction\n';
     const rows = this.currentWindData.map(d => `${d.altitude},${d.speed},${d.direction}`).join('\n');
     const csv = headers + rows;
-
     navigator.clipboard.writeText(csv).then(() => {
       alert('Data copied to clipboard!');
     }).catch(err => {
@@ -515,7 +467,7 @@ class WindDataFetcher {
     const spinner = this.fetchButton.querySelector('.spinner') as HTMLDivElement;
     const text = this.fetchButton.querySelector('.button-text') as HTMLSpanElement;
     spinner.style.display = 'none';
-    text.innerText = '🌬️ Fetch Wind Data';
+    text.innerText = 'Get Winds';
   }
 
   private showError(message: string): void {

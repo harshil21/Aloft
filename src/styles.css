@@ -12,6 +12,12 @@ body {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
     padding: 20px;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+body.dark-mode {
+    color: #e5e7eb;
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b0764 100%);
 }
 
 .container {
@@ -22,6 +28,11 @@ body {
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
     overflow: hidden;
     backdrop-filter: blur(10px);
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+body.dark-mode .container {
+    background: #1f2937;
 }
 
 /* Header */
@@ -32,6 +43,10 @@ header {
     padding: 40px 30px;
     position: relative;
     overflow: hidden;
+}
+
+body.dark-mode header {
+    background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%);
 }
 
 header::before {
@@ -61,6 +76,72 @@ header p {
     z-index: 1;
 }
 
+/* Theme toggle */
+.theme-toggle {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 2;
+}
+
+.theme-toggle-label {
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+    position: relative;
+}
+
+.theme-switch {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "🌞";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.theme-switch:checked + .slider {
+    background-color: #4facfe;
+}
+
+.theme-switch:checked + .slider:before {
+    content: "🌙";
+    transform: translateX(26px);
+}
+
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
 /* Form styles */
 .form-section {
     padding: 40px;
@@ -85,6 +166,10 @@ label {
     font-size: 0.95rem;
 }
 
+body.dark-mode label {
+    color: #d1d5db;
+}
+
 input, select {
     width: 100%;
     padding: 14px 16px;
@@ -94,6 +179,13 @@ input, select {
     background: white;
     transition: all 0.3s ease;
     font-family: inherit;
+}
+
+body.dark-mode input,
+body.dark-mode select {
+    background: #374151;
+    border-color: #4b5563;
+    color: #e5e7eb;
 }
 
 input:focus, select:focus {
@@ -107,12 +199,20 @@ input::placeholder {
     color: #9ca3af;
 }
 
+body.dark-mode input::placeholder {
+    color: #9ca3af;
+}
+
 small {
     display: block;
     color: #6b7280;
     font-size: 0.85rem;
     margin-top: 6px;
     line-height: 1.4;
+}
+
+body.dark-mode small {
+    color: #9ca3af;
 }
 
 /* Button styles */
@@ -133,6 +233,10 @@ small {
     align-items: center;
     justify-content: center;
     gap: 8px;
+}
+
+body.dark-mode .fetch-button {
+    background: linear-gradient(135deg, #3b82f6 0%, #9333ea 100%);
 }
 
 .fetch-button:hover:not(:disabled) {
@@ -192,6 +296,12 @@ small {
     gap: 12px;
 }
 
+body.dark-mode .error-message {
+    background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%);
+    border-color: #b91c1c;
+    color: #fecaca;
+}
+
 .error-message::before {
     content: '⚠️';
     font-size: 1.2em;
@@ -204,6 +314,10 @@ small {
     color: #6b7280;
 }
 
+body.dark-mode .loading-indicator {
+    color: #9ca3af;
+}
+
 .loading-spinner {
     width: 40px;
     height: 40px;
@@ -214,6 +328,11 @@ small {
     margin: 0 auto 16px;
 }
 
+body.dark-mode .loading-spinner {
+    border-color: #4b5563;
+    border-top-color: #3b82f6;
+}
+
 /* Results section */
 .results-section {
     margin: 20px 40px 40px;
@@ -221,6 +340,11 @@ small {
     border-radius: 16px;
     padding: 32px;
     border: 1px solid #e5e7eb;
+}
+
+body.dark-mode .results-section {
+    background: #374151;
+    border-color: #4b5563;
 }
 
 .results-header {
@@ -233,12 +357,20 @@ small {
     margin-bottom: 8px;
 }
 
+body.dark-mode .results-header h2 {
+    color: #e5e7eb;
+}
+
 .results-meta {
     display: flex;
     gap: 24px;
     flex-wrap: wrap;
     color: #6b7280;
     font-size: 0.9rem;
+}
+
+body.dark-mode .results-meta {
+    color: #9ca3af;
 }
 
 .results-actions {
@@ -263,9 +395,17 @@ small {
     color: white;
 }
 
+body.dark-mode .download-button {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+}
+
 .copy-button {
     background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
     color: white;
+}
+
+body.dark-mode .copy-button {
+    background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%);
 }
 
 .download-button:hover, .copy-button:hover {
@@ -290,6 +430,10 @@ table {
     overflow: hidden;
 }
 
+body.dark-mode table {
+    background: #374151;
+}
+
 th {
     background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
     color: white;
@@ -301,6 +445,10 @@ th {
     letter-spacing: 0.5px;
 }
 
+body.dark-mode th {
+    background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+}
+
 td {
     padding: 16px 20px;
     border-bottom: 1px solid #f3f4f6;
@@ -308,8 +456,17 @@ td {
     font-size: 0.95rem;
 }
 
+body.dark-mode td {
+    border-bottom-color: #4b5563;
+    color: #d1d5db;
+}
+
 tr:hover {
     background: #f9fafb;
+}
+
+body.dark-mode tr:hover {
+    background: #4b5563;
 }
 
 tr:last-child td {
@@ -317,17 +474,21 @@ tr:last-child td {
 }
 
 .wind-vector-graph {
-  margin: 20px 40px 40px;
-  background: #f9fafb;
-  border-radius: 16px;
-  padding: 16px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    background: #f9fafb;
+    border-radius: 16px;
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+body.dark-mode .wind-vector-graph {
+    background: #374151;
+    border-color: #4b5563;
 }
 
 #windVectorCanvas {
   width: 100%;
-  height: auto;
+  height: 400px;
 }
 
 /* Footer */
@@ -339,6 +500,12 @@ footer {
     border-top: 1px solid #e5e7eb;
 }
 
+body.dark-mode footer {
+    background: #374151;
+    color: #9ca3af;
+    border-top-color: #4b5563;
+}
+
 footer p {
     margin-bottom: 4px;
 }
@@ -347,6 +514,10 @@ footer a {
     color: #4facfe;
     text-decoration: none;
     font-weight: 500;
+}
+
+body.dark-mode footer a {
+    color: #3b82f6;
 }
 
 footer a:hover {
@@ -396,6 +567,10 @@ footer a:hover {
     
     footer {
         padding: 20px;
+    }
+
+    #windVectorCanvas {
+        height: 300px;
     }
 }
 

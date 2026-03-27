@@ -1,16 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aloft</title>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <div class="container">
         <header>
             <h1>🌪️ Aloft</h1>
-            <p>Get precise wind speed and direction data at different altitudes for OpenRocket multi level wind simulations</p>
+            <p>Get precise wind speed and direction data at different altitudes for OpenRocket multi level wind
+                simulations</p>
             <div class="theme-toggle">
                 <label class="theme-toggle-label" for="themeSwitch">
                     <input type="checkbox" id="themeSwitch" class="theme-switch">
@@ -22,40 +25,85 @@
         <main>
             <form id="windForm" class="form-section">
                 <div class="form-grid">
-                    <div class="form-group">
-                        <label for="latitude">Latitude (-90 to 90)</label>
-                        <input 
-                            type="number" 
-                            id="latitude" 
-                            step="0.00000001"
-                            min="-90"
-                            max="90"
-                            placeholder="35.1758000"
-                            required
-                        >
-                        <small>Bayboro, NC: 35.1758000, Dalzell, SC: 34.050934</small>
+
+                    <!-- ===== Location Preset Selector ===== -->
+                    <div class="location-selector">
+                        <label class="location-selector-label">🚀 Launch Site</label>
+                        <div class="preset-cards">
+
+                            <button type="button" class="preset-card active" data-preset="bayboro" data-lat="35.1758000"
+                                data-lon="-76.8283400">
+                                <span class="preset-icon">📍</span>
+                                <span class="preset-city">Bayboro</span>
+                                <span class="preset-state">NC</span>
+                                <span class="preset-coords">35.1758° N · 76.8283° W</span>
+                            </button>
+
+                            <button type="button" class="preset-card" data-preset="dalzell" data-lat="34.050934"
+                                data-lon="-80.421280">
+                                <span class="preset-icon">📍</span>
+                                <span class="preset-city">Dalzell</span>
+                                <span class="preset-state">SC</span>
+                                <span class="preset-coords">34.0509° N · 80.4213° W</span>
+                            </button>
+
+                            <button type="button" class="preset-card preset-card-custom" data-preset="custom">
+                                <span class="preset-icon">✏️</span>
+                                <span class="preset-city">Custom</span>
+                                <span class="preset-state preset-state-custom">—</span>
+                                <span class="preset-coords">Enter your own<br>coordinates below</span>
+                            </button>
+
+                        </div>
+
+                        <div class="coord-inputs-row">
+                            <div class="coord-field">
+                                <label for="latitude">
+                                    Latitude
+                                    <small class="coord-range">(-90 to 90)</small>
+                                </label>
+                                <div class="coord-input-wrapper locked" id="latWrapper">
+                                    <input type="number" id="latitude" step="0.00000001" min="-90" max="90"
+                                        value="35.1758000" placeholder="35.1758000" disabled required>
+                                    <span class="coord-lock-indicator" id="latLock">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                            width="14" height="14">
+                                            <path fill-rule="evenodd"
+                                                d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z"
+                                                clip-rule="evenodd" />
+                                        </svg>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="coord-field">
+                                <label for="longitude">
+                                    Longitude
+                                    <small class="coord-range">(-180 to 180)</small>
+                                </label>
+                                <div class="coord-input-wrapper locked" id="lonWrapper">
+                                    <input type="number" id="longitude" step="0.00000001" min="-180" max="180"
+                                        value="-76.8283400" placeholder="-76.8283400" disabled required>
+                                    <span class="coord-lock-indicator" id="lonLock">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                            width="14" height="14">
+                                            <path fill-rule="evenodd"
+                                                d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z"
+                                                clip-rule="evenodd" />
+                                        </svg>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <div class="form-group">
-                        <label for="longitude">Longitude (-180 to 180)</label>
-                        <input 
-                            type="number" 
-                            id="longitude" 
-                            step="0.00000001"
-                            min="-180"
-                            max="180"
-                            placeholder="-76.8283400"
-                            required
-                        >
-                        <small>Bayboro, NC: -76.8283400, Dalzell, SC: -80.421280</small>
-                    </div>
-                    
+                    <!-- ===== End Location Selector ===== -->
+
                     <div class="form-group">
                         <label for="date">Date</label>
                         <input type="date" id="date" required>
                         <small>Select any date for historical/forecast data</small>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="time">Launch Time</label>
                         <select id="time" required>
@@ -63,7 +111,7 @@
                         </select>
                         <small>All times local to selected location</small>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="speedUnit">Wind Speed Unit</label>
                         <select id="speedUnit">
@@ -73,7 +121,7 @@
                             <option value="kn">knots</option>
                         </select>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="minHpa">Up to Height</label>
                         <select id="minHpa">
@@ -123,12 +171,11 @@
                             <option value="20">20 hPa (23000 m)</option>
                             <option value="15">15 hPa (24000 m)</option>
                             <option value="10">10 hPa (26000 m)</option>
-
                         </select>
                         <small>Higher altitudes include all lower levels</small>
                     </div>
                 </div>
-                    
+
                 <button type="submit" id="fetchButton" class="fetch-button">
                     <span class="button-text">Get Winds</span>
                     <div class="spinner" style="display: none;"></div>
@@ -136,7 +183,7 @@
             </form>
 
             <div id="errorMessage" class="error-message" style="display: none;"></div>
-            
+
             <div id="loadingIndicator" class="loading-indicator" style="display: none;">
                 <div class="loading-spinner"></div>
                 <p>Fetching wind data from Open-Meteo API...</p>
@@ -148,11 +195,32 @@
                     <div class="results-meta">
                         <span id="locationInfo"></span>
                         <span id="dateTimeInfo"></span>
-                        <br>
-                        <span>Altitudes are measured above sea level</span>
                     </div>
+
+                    <!-- Temperature strip: sits between Location/DateTime and the altitude note -->
+                    <div id="temperatureDisplay" class="temperature-display" style="display: none;">
+                        <div class="temp-icon-wrap">🌡️</div>
+                        <div class="temp-body">
+                            <div class="temp-label">Surface Temperature (2 m)</div>
+                            <div class="temp-values-row">
+                                <span id="tempValueC" class="temp-c">--</span>
+                                <span class="temp-divider">·</span>
+                                <span id="tempValueF" class="temp-f">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="altitude-note">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="14"
+                            height="14" style="vertical-align: -2px; margin-right: 4px; opacity: 0.6;">
+                            <path fill-rule="evenodd"
+                                d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-7-4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 9a.75.75 0 0 0 0 1.5h.253a.25.25 0 0 1 .244.304l-.459 2.066A1.75 1.75 0 0 0 10.747 15H11a.75.75 0 0 0 0-1.5h-.253a.25.25 0 0 1-.244-.304l.459-2.066A1.75 1.75 0 0 0 9.253 9H9Z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        Altitudes are measured above sea level
+                    </p>
                 </div>
-            
+
                 <div class="results-actions">
                     <button id="downloadCsv" class="download-button">
                         📥 Download CSV
@@ -161,7 +229,7 @@
                         📋 Copy to Clipboard
                     </button>
                 </div>
-            
+
                 <div class="table-wrapper">
                     <table id="resultsTable">
                         <thead>
@@ -177,7 +245,7 @@
                         </tbody>
                     </table>
                 </div>
-                
+
                 <div class="wind-vector-graph" style="position: relative; height:70vh; width:auto">
                     <canvas id="windVectorCanvas"></canvas>
                 </div>
@@ -186,12 +254,17 @@
 
         <footer>
             <p>Data provided by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo API</a></p>
-            <p><a href="https://github.com/harshil21/Aloft" target="_blank" rel="noopener">View Source on GitHub</a> <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle; margin-left: 4px;">
-                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
-            </svg></p>
+            <p><a href="https://github.com/harshil21/Aloft" target="_blank" rel="noopener">View Source on GitHub</a>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"
+                    style="vertical-align: middle; margin-left: 4px;">
+                    <path
+                        d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+                </svg>
+            </p>
         </footer>
     </div>
 
     <script type="module" src="main.js"></script>
 </body>
+
 </html>

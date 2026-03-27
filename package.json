@@ -8,7 +8,9 @@
   "scripts": {
     "build": "bun run src/build.ts",
     "dev": "bun --watch src/main.ts",
-    "serve": "bun run src/server.ts"
+    "serve": "bun run src/server.ts",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   },
   "devDependencies": {
     "@types/bun": "latest",
@@ -18,5 +20,8 @@
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "wrangler": "^4.77.0"
   }
 }
